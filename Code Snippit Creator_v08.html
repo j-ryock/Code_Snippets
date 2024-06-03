@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code Snippets</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+  }
+  form {
+    margin-bottom: 20px;
+  }
+  textarea {
+    width: 100%;
+    height: 100px;
+  }
+  .snippet {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  .delete-btn, .edit-btn {
+    color: red;
+    cursor: pointer;
+    margin-right: 10px;
+  }
+  .edit-btn {
+    color: blue;
+  }
+</style>
+</head>
+<body>
+<h1>Code Snippets</h1>
+
+<form id="snippet-form">
+  <input type="hidden" id="snippet-index">
+  <label for="title">Snippet Title:</label><br>
+  <input type="text" id="title" name="title" required><br><br>
+  <label for="language">Snippet Language:</label><br>
+  <select id="language" name="language" required>
+    <option value="HTML">HTML</option>
+    <option value="CSS">CSS</option>
+    <option value="JavaScript">JavaScript</option>
+    <option value="JSON">JSON</option>
+  </select><br><br>
+  <label for="snippet">Snippet:</label><br>
+  <textarea id="snippet" name="snippet" required></textarea><br><br>
+  <button type="submit">Add Snippet</button>
+</form>
+
+<div>
+  <label for="filter-language">Filter by Language:</label>
+  <select id="filter-language" onchange="filterSnippets()">
+    <option value="All">All</option>
+    <option value="HTML">HTML</option>
+    <option value="CSS">CSS</option>
+    <option value="JavaScript">JavaScript</option>
+    <option value="JSON">JSON</option>
+  </select>
+  <br><br>
+  <label for="search-snippets">Search Snippets:</label>
+  <input type="text" id="search-snippets" onkeyup="searchSnippets()" placeholder="Search by title or content">
+</div>
+
+<div id="snippets-container"></div>
+
+<script>
+  // Check if there are existing snippets in localStorage
+  let snippets = JSON.parse(localStorage.getItem('snippets')) || [];
+
+  const form = document.getElementById('snippet-form');
+  const snippetsContainer = document.getElementById('snippets-container');
+  const filterLanguageSelect = document.getElementById('filter-language');
+  const searchSnippetsInput = document.getElementById('search-snippets');
+  let isEditing = false;
+  let editingIndex = null;
+
+  // Function to display snippets
+  function displaySnippets(filteredSnippets = snippets) {
+    snippetsContainer.innerHTML = '';
+    filteredSnippets.forEach((snippet, index) => {
+      const snippetDiv = document.createElement('div');
+      snippetDiv.classList.add('snippet');
+      snippetDiv.innerHTML = `
+        <h3>${snippet.title}</h3>
+        <p><strong>Language:</strong> ${snippet.language}</p>
+        <pre><code>${snippet.code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+        <p>
+          <span class="edit-btn" onclick="editSnippet(${index})">Edit</span>
+          <span class="delete-btn" onclick="deleteSnippet(${index})">Delete</span>
+        </p>
+      `;
+      snippetsContainer.appendChild(snippetDiv);
+    });
+  }
+
+  // Function to add a new snippet
+  function addSnippet(title, language, code) {
+    if (isEditing) {
+      snippets[editingIndex] = { title, language, code };
+      isEditing = false;
+      editingIndex = null;
+    } else {
+      snippets.push({ title, language, code });
+    }
+    localStorage.setItem('snippets', JSON.stringify(snippets));
+    displaySnippets();
+  }
+
+  // Function to delete a snippet
+  function deleteSnippet(index) {
+    snippets.splice(index, 1);
+    localStorage.setItem('snippets', JSON.stringify(snippets));
+    displaySnippets();
+  }
+
+  // Function to edit a snippet
+  function editSnippet(index) {
+    const snippet = snippets[index];
+    document.getElementById('title').value = snippet.title;
+    document.getElementById('language').value = snippet.language;
+    document.getElementById('snippet').value = snippet.code;
+    document.getElementById('snippet-index').value = index;
+    isEditing = true;
+    editingIndex = index;
+  }
+
+  // Function to filter snippets by language
+  function filterSnippets() {
+    const selectedLanguage = filterLanguageSelect.value;
+    if (selectedLanguage === 'All') {
+      displaySnippets();
+    } else {
+      const filteredSnippets = snippets.filter(snippet => snippet.language === selectedLanguage);
+      displaySnippets(filteredSnippets);
+    }
+  }
+
+  // Function to search snippets by title or content
+  function searchSnippets() {
+    const searchText = searchSnippetsInput.value.toLowerCase();
+    const filteredSnippets = snippets.filter(snippet => 
+      snippet.title.toLowerCase().includes(searchText) ||
+      snippet.code.toLowerCase().includes(searchText)
+    );
+    displaySnippets(filteredSnippets);
+  }
+
+  // Event listener for form submission
+  form.addEventListener('submit', function(event) {
+    event.preventDefault();
+    const title = document.getElementById('title').value;
+    const language = document.getElementById('language').value;
+    const code = document.getElementById('snippet').value;
+    addSnippet(title, language, code);
+    form.reset();
+  });
+
+  // Display existing snippets on page load
+  displaySnippets();
+</script>
+
+</body>
+</html>
